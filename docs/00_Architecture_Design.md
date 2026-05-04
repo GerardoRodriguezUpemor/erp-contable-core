@@ -2,40 +2,42 @@
 
 The Fiscal Engine strictly adheres to **Clean Architecture** and **Domain-Driven Design (DDD)**. The central premise is that the framework (Laravel) and the database (PostgreSQL) are mere I/O details. The application's core rules are completely isolated and framework-agnostic.
 
+
 ## Layer Overview
 
 ```mermaid
 flowchart TD
-    subgraph Presentation["1. Presentation Layer (HTTP / CLI)"]
-        Controllers[Controllers / APIs]
-        Console[Artisan Commands]
+    subgraph Domain ["1. Domain Layer (Fiscal Core)"]
+        Aggregates["Aggregates: Invoice, PaymentComplement"]
+        VO["Value Objects: Tax, Money, Uuid"]
+        Services["Domain Services: TaxStrategyFactory"]
+        Interfaces["Repository Contracts"]
     end
 
-    subgraph Application["2. Application Layer (Use Cases)"]
-        UC[Use Cases]
-        CQRS[Queries (Read Models)]
-        Jobs[Job Dispatchers]
+    subgraph Application ["2. Application Layer (Use Cases)"]
+        UC["Use Cases"]
+        CQRS["Queries (Read Models)"]
+        Jobs["Job Dispatchers"]
     end
 
-    subgraph Domain["3. Domain Layer (Fiscal Core)"]
-        Aggregates[Aggregates: Invoice, PaymentComplement]
-        VO[Value Objects: Tax, Money, Uuid]
-        Services[Domain Services: TaxStrategyFactory]
-        Interfaces[Repository Contracts]
+    subgraph Infrastructure ["3. Infrastructure Layer"]
+        Postgres["PostgreSQL Repositories"]
+        Queue["Redis Queue Workers"]
+        Auth["Laravel Auth Adapters"]
     end
 
-    subgraph Infrastructure["4. Infrastructure Layer"]
-        Postgres[PostgreSQL Repositories]
-        Queue[Redis Queue Workers]
-        Auth[Laravel Auth Adapters]
+    subgraph Presentation ["4. Presentation Layer (HTTP / CLI)"]
+        Controllers["Controllers / APIs"]
+        Console["Artisan Commands"]
     end
 
-    Presentation -->|DTOs & Primitives| Application
-    Application -->|Delegates Math/Rules| Domain
-    Application -->|Interfaces| Infrastructure
-    CQRS -->|Raw SQL (Bypasses Domain)| Postgres
-    Postgres -.->|Data Mapper (Reconstitution)| Aggregates
+    Presentation -->|"DTOs & Primitives"| Application
+    Application -->|"Delegates Math/Rules"| Domain
+    Application -->|"Interfaces"| Infrastructure
+    CQRS -->|"Raw SQL (Bypasses Domain)"| Postgres
+    Postgres -.->|"Data Mapper (Reconstitution)"| Aggregates
 ```
+
 
 ### 1. Domain Layer (The Core)
 Contains zero dependencies on external libraries. Everything here is pure PHP.
