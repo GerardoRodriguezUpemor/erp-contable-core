@@ -1,0 +1,22 @@
+parameters:
+  paths:
+    - src
+  layers:
+    - name: Ingestion
+      collectors:
+        - type: className
+          regex: ^App\\Ingestion\\.*
+    - name: Fiscal
+      collectors:
+        - type: className
+          regex: ^App\\Fiscal\\.*
+    - name: Shared
+      collectors:
+        - type: className
+          regex: ^App\\Shared\\.*
+  ruleset:
+    Ingestion:
+      - Shared
+    Fiscal:
+      - Shared
+    Shared: ~
