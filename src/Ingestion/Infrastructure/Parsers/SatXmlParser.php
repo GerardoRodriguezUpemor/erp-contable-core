@@ -4,15 +4,24 @@ declare(strict_types=1);
 
 namespace App\Ingestion\Infrastructure\Parsers;
 
-use App\Ingestion\Application\DTOs\RawInvoiceDto;
+use App\Ingestion\Application\DTOs\RawCfdiDto;
+use App\Ingestion\Application\DTOs\SatDocumentType;
 use App\Shared\Domain\ValueObjects\Money;
 use App\Shared\Domain\ValueObjects\Uuid;
 use DateTimeImmutable;
 use RuntimeException;
 
+/**
+ * Parses a raw SAT CFDI XML string into a RawCfdiDto.
+ *
+ * Audit: This parser contains ZERO ownership, routing, or fiscal logic.
+ * Its sole responsibility is to extract raw SAT data and map it to
+ * strongly-typed value objects. Classification is handled downstream
+ * by CfdiOwnershipResolver.
+ */
 class SatXmlParser implements XmlParserInterface
 {
-    public function parse(string $xmlContent): RawInvoiceDto
+    public function parse(string $xmlContent): RawCfdiDto
     {
         $xml = simplexml_load_string($xmlContent);
         if ($xml === false) {
@@ -32,27 +41,31 @@ class SatXmlParser implements XmlParserInterface
         $uuidString = (string) $tfdNode[0]['UUID'];
 
         // Extract base attributes
-        $emittedAtString = (string) ($xml['Fecha'] ?? throw new RuntimeException("Fecha attribute missing."));
-        $tipoDeComprobante = (string) ($xml['TipoDeComprobante'] ?? throw new RuntimeException("TipoDeComprobante attribute missing."));
-        $metodoPago = (string) ($xml['MetodoPago'] ?? 'N/A'); // REPs (Pago) might not have this at the root
+        $emittedAtString    = (string) ($xml['Fecha'] ?? throw new RuntimeException("Fecha attribute missing."));
+        $tipoDeComprobante  = (string) ($xml['TipoDeComprobante'] ?? throw new RuntimeException("TipoDeComprobante attribute missing."));
+        $metodoPago         = (string) ($xml['MetodoPago'] ?? 'N/A'); // REPs (Pago) might not have this at the root
+
+        // Normalize TipoDeComprobante into the semantic SatDocumentType.
+        // This will throw explicitly if SAT introduces an unknown code.
+        $documentType = SatDocumentType::fromSatCode($tipoDeComprobante);
 
         // Extract Emisor and Receptor RFCs with defensive checks
-        $emisor = $xml->xpath('//cfdi:Emisor');
+        $emisor    = $xml->xpath('//cfdi:Emisor');
         $emisorRfc = !empty($emisor) ? (string) $emisor[0]['Rfc'] : throw new RuntimeException("Emisor RFC missing");
 
-        $receptor = $xml->xpath('//cfdi:Receptor');
+        $receptor    = $xml->xpath('//cfdi:Receptor');
         $receptorRfc = !empty($receptor) ? (string) $receptor[0]['Rfc'] : throw new RuntimeException("Receptor RFC missing");
 
-        // Map directly to strongly typed Value Objects to prevent data leakage
-        return new RawInvoiceDto(
-            uuid: new Uuid($uuidString),
-            emittedAt: new DateTimeImmutable($emittedAtString),
-            tipoDeComprobante: $tipoDeComprobante,
-            metodoPago: $metodoPago,
-            subtotal: Money::fromFloat((float) ($xml['SubTotal'] ?? 0)),
-            total: Money::fromFloat((float) ($xml['Total'] ?? 0)),
-            emisorRfc: $emisorRfc,
-            receptorRfc: $receptorRfc
+        return new RawCfdiDto(
+            uuid:                new Uuid($uuidString),
+            emittedAt:           new DateTimeImmutable($emittedAtString),
+            documentType:        $documentType,
+            tipoDeComprobante:   $tipoDeComprobante,
+            metodoPago:          $metodoPago,
+            subtotal:            Money::fromFloat((float) ($xml['SubTotal'] ?? 0)),
+            total:               Money::fromFloat((float) ($xml['Total'] ?? 0)),
+            emisorRfc:           $emisorRfc,
+            receptorRfc:         $receptorRfc,
         );
     }
 }
