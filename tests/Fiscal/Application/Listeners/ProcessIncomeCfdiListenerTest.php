@@ -120,7 +120,13 @@ class ProcessIncomeCfdiListenerTest extends TestCase
             ->expects($this->once())
             ->method('execute')
             ->with(
-                $this->callback(fn(RawCfdiDto $dto) => $dto->emisorRfc === 'AAA010101AAA'),
+                $this->callback(function(array $data) {
+                    return $data['uuid']->getValue() === '11111111-2222-3333-4444-555555555555'
+                        && $data['tipoDeComprobante'] === 'I'
+                        && $data['metodoPago'] === 'PUE'
+                        && $data['subtotal']->getCents() === 100000
+                        && $data['total']->getCents() === 116000;
+                }),
                 '625'
             );
 
@@ -133,7 +139,13 @@ class ProcessIncomeCfdiListenerTest extends TestCase
             ->expects($this->once())
             ->method('execute')
             ->with(
-                $this->callback(fn(RawCfdiDto $dto) => $dto->receptorRfc === 'BBB020202BBB'),
+                $this->callback(function(array $data) {
+                    return $data['uuid']->getValue() === '11111111-2222-3333-4444-555555555555'
+                        && $data['tipoDeComprobante'] === 'I'
+                        && $data['metodoPago'] === 'PUE'
+                        && $data['subtotal']->getCents() === 100000
+                        && $data['total']->getCents() === 116000;
+                }),
                 '625'
             );
 

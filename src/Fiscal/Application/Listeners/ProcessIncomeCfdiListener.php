@@ -72,8 +72,20 @@ class ProcessIncomeCfdiListener
             );
         }
 
+        // Anti-Corruption Layer (ACL) mapping:
+        // Translate the Ingestion construct (RawCfdiDto) into a generic array
+        // to prevent Fiscal from depending on Ingestion.
+        $invoiceData = [
+            'uuid'              => $dto->uuid,
+            'emittedAt'         => $dto->emittedAt,
+            'tipoDeComprobante' => $dto->tipoDeComprobante,
+            'metodoPago'        => $dto->metodoPago,
+            'subtotal'          => $dto->subtotal,
+            'total'             => $dto->total,
+        ];
+
         // Handoff — delegate entirely to the Fiscal use case.
         // The regime is resolved from the authenticated tenant context.
-        $this->importInvoiceUseCase->execute($dto, $this->tenantContext->getCurrentRegime());
+        $this->importInvoiceUseCase->execute($invoiceData, $this->tenantContext->getCurrentRegime());
     }
 }
