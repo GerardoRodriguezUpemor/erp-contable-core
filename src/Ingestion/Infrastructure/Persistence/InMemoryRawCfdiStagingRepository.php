@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Ingestion\Infrastructure\Persistence;
 
+use App\Ingestion\Application\Contracts\RawCfdiStagingRepositoryInterface;
 use App\Ingestion\Application\DTOs\RawCfdiDto;
 use App\Shared\Domain\ValueObjects\Uuid;
 

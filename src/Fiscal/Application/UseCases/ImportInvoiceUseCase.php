@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Fiscal\Application\UseCases;
 
-use App\Ingestion\Application\DTOs\RawCfdiDto;
+use App\Fiscal\Application\Data\InvoiceImportData;
 use App\Fiscal\Domain\Repositories\InvoiceRepositoryInterface;
 use App\Fiscal\Domain\Services\TaxStrategies\TaxStrategyFactoryInterface;
 use App\Shared\Application\TransactionManagerInterface;
@@ -30,8 +30,8 @@ use RuntimeException;
  * - Cross-context routing decisions
  * - Calling IngestAndClassifyCfdiUseCase or ProcessRawXmlUseCase
  *
- * This use case now receives a pre-parsed, pre-classified RawCfdiDto
- * provided by ProcessIncomeCfdiListener after hydrating from staging.
+ * The use case receives a Fiscal-owned input model. Translation from ingestion
+ * snapshots is performed by the cross-context anti-corruption listener.
  */
 class ImportInvoiceUseCase
 {
@@ -43,10 +43,10 @@ class ImportInvoiceUseCase
     ) {}
 
     /**
-     * @param RawCfdiDto $dto            Pre-parsed, pre-classified CFDI data from staging
+     * @param InvoiceImportData $dto     Fiscal-owned, pre-parsed invoice data
      * @param string     $taxpayerRegime The fiscal regime of the tenant (e.g., '625')
      */
-    public function execute(RawCfdiDto $dto, string $taxpayerRegime): void
+    public function execute(InvoiceImportData $dto, string $taxpayerRegime): void
     {
         // 1. Idempotency: prevent duplicate fiscal processing
         if ($this->invoiceRepository->exists($dto->uuid)) {

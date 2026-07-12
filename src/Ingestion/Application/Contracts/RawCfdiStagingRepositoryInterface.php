@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Ingestion\Infrastructure\Persistence;
+namespace App\Ingestion\Application\Contracts;
 
 use App\Ingestion\Application\DTOs\RawCfdiDto;
 use App\Shared\Domain\ValueObjects\Uuid;

@@ -5,13 +5,20 @@ declare(strict_types=1);
 namespace App\Shared\Infrastructure\Queue;
 
 use App\Shared\Application\JobDispatcherInterface;
-use App\Fiscal\Infrastructure\Jobs\ProcessInvoiceJob;
+use Closure;
 
 class LaravelJobDispatcher implements JobDispatcherInterface
 {
-    public function dispatchProcessInvoice(string $xmlContent, string $taxpayerRegime): void
+    private Closure $dispatch;
+
+    /** @param callable(string): void $dispatch Framework-specific queue callback. */
+    public function __construct(callable $dispatch)
     {
-        // This pushes the job to Redis/Database queue
-        ProcessInvoiceJob::dispatch($xmlContent, $taxpayerRegime);
+        $this->dispatch = Closure::fromCallable($dispatch);
+    }
+
+    public function dispatchIngestCfdi(string $xmlContent): void
+    {
+        ($this->dispatch)($xmlContent);
     }
 }

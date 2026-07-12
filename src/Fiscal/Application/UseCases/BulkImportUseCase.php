@@ -20,12 +20,12 @@ class BulkImportUseCase
     public function execute(array $xmlContents): void
     {
         // Fetch the RFC securely once for the entire batch
-        $rfc = $this->tenantContext->getCurrentRfc();
+        $this->tenantContext->getCurrentRfc();
 
         foreach ($xmlContents as $xmlContent) {
             // Dispatch to the background queue. 
             // The user does not wait for this to finish.
-            $this->dispatcher->dispatchProcessInvoice($xmlContent, $rfc);
+            $this->dispatcher->dispatchIngestCfdi($xmlContent);
         }
     }
 }
