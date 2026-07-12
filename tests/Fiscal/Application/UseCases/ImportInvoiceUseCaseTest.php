@@ -12,8 +12,6 @@ use App\Fiscal\Domain\Services\TaxStrategies\TaxStrategyFactoryInterface;
 use App\Fiscal\Domain\Services\TaxStrategies\TaxStrategyInterface;
 use App\Fiscal\Domain\ValueObjects\Tax;
 use App\Fiscal\Domain\Enums\TaxCategory;
-use App\Ingestion\Application\DTOs\RawCfdiDto;
-use App\Ingestion\Application\DTOs\SatDocumentType;
 use App\Shared\Application\EventDispatcherInterface;
 use App\Shared\Application\TransactionManagerInterface;
 use App\Shared\Domain\ValueObjects\Money;
@@ -26,7 +24,7 @@ use RuntimeException;
  * Tests for ImportInvoiceUseCase after Phase 4 refactoring.
  *
  * Key change: the use case no longer depends on ProcessRawXmlUseCase.
- * It now receives a pre-built RawCfdiDto directly (provided by the listener
+ * It now receives a decoupled array of invoice data directly (provided by the listener
  * after hydrating from the staging repository).
  *
  * ProcessRawXmlUseCase mock has been removed from this test.
@@ -39,21 +37,19 @@ class ImportInvoiceUseCaseTest extends TestCase
     private EventDispatcherInterface    $eventDispatcher;
     private ImportInvoiceUseCase        $sut;
 
-    private RawCfdiDto $validDto;
+    /** @var array{uuid: Uuid, emittedAt: DateTimeImmutable, tipoDeComprobante: string, metodoPago: string, subtotal: Money, total: Money} */
+    private array $validInvoiceData;
 
     protected function setUp(): void
     {
-        $this->validDto = new RawCfdiDto(
-            uuid:               new Uuid('11111111-2222-3333-4444-555555555555'),
-            emittedAt:          new DateTimeImmutable('2026-04-20 10:00:00'),
-            documentType:       SatDocumentType::INVOICE,
-            tipoDeComprobante:  'I',
-            metodoPago:         'PUE',
-            subtotal:           new Money(100000),
-            total:              new Money(116000),
-            emisorRfc:          'AAA010101AAA',
-            receptorRfc:        'XXX010101XXX',
-        );
+        $this->validInvoiceData = [
+            'uuid'              => new Uuid('11111111-2222-3333-4444-555555555555'),
+            'emittedAt'         => new DateTimeImmutable('2026-04-20 10:00:00'),
+            'tipoDeComprobante' => 'I',
+            'metodoPago'        => 'PUE',
+            'subtotal'          => new Money(100000),
+            'total'             => new Money(116000),
+        ];
 
         $this->invoiceRepository = $this->createMock(InvoiceRepositoryInterface::class);
         $this->taxFactory        = $this->createMock(TaxStrategyFactoryInterface::class);
@@ -77,13 +73,13 @@ class ImportInvoiceUseCaseTest extends TestCase
     {
         $this->invoiceRepository->expects($this->once())
             ->method('exists')
-            ->with($this->validDto->uuid)
+            ->with($this->validInvoiceData['uuid'])
             ->willReturn(true);
 
         $this->invoiceRepository->expects($this->never())->method('save');
         $this->eventDispatcher->expects($this->never())->method('dispatchAll');
 
-        $this->sut->execute($this->validDto, '625');
+        $this->sut->execute($this->validInvoiceData, '625');
     }
 
     public function test_it_throws_if_fiscal_discrepancy_exists(): void
@@ -103,7 +99,7 @@ class ImportInvoiceUseCaseTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Fiscal Discrepancy Detected');
 
-        $this->sut->execute($this->validDto, '625');
+        $this->sut->execute($this->validInvoiceData, '625');
     }
 
     public function test_it_successfully_imports_and_dispatches_event(): void
@@ -132,6 +128,6 @@ class ImportInvoiceUseCaseTest extends TestCase
                 return count($events) === 1 && $events[0] instanceof InvoiceImportedEvent;
             }));
 
-        $this->sut->execute($this->validDto, '625');
+        $this->sut->execute($this->validInvoiceData, '625');
     }
 }

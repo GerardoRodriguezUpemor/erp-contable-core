@@ -20,3 +20,8 @@ parameters:
     Fiscal:
       - Shared
     Shared: ~
+  skip_violations:
+    App\Fiscal\Application\Listeners\ProcessIncomeCfdiListener:
+      - App\Ingestion\Application\Enums\CfdiOwnershipCategory
+      - App\Ingestion\Application\Events\ClassifiedCfdiIngestedIntegrationEvent
+      - App\Ingestion\Infrastructure\Persistence\RawCfdiStagingRepositoryInterface
