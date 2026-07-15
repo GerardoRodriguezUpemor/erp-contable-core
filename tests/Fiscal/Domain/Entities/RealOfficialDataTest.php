@@ -45,6 +45,8 @@ class RealOfficialDataTest extends TestCase
         }
 
         // --- IMPRESIÓN PARA QUE VEAS EL RESULTADO ---
+        $this->expectOutputRegex('/RESULTADO DE TU DOCUMENTO OFICIAL.*Documento Perfecto/s');
+
         echo "\n\n=== RESULTADO DE TU DOCUMENTO OFICIAL ===";
         echo "\nSubtotal Base: $" . number_format($subtotal->getCents() / 100, 2);
         

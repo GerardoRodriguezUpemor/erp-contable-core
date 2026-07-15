@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Ingestion\Application\UseCases;
 
+use App\Ingestion\Application\Contracts\RawCfdiStagingRepositoryInterface;
 use App\Ingestion\Application\Enums\CfdiOwnershipCategory;
 use App\Ingestion\Application\Events\ClassifiedCfdiIngestedIntegrationEvent;
 use App\Ingestion\Application\Services\CfdiOwnershipResolverInterface;
 use App\Ingestion\Infrastructure\Parsers\XmlParserInterface;
-use App\Ingestion\Infrastructure\Persistence\RawCfdiStagingRepositoryInterface;
 use App\Ingestion\Domain\Validators\XmlValidatorInterface;
 use App\Shared\Application\EventDispatcherInterface;
 use App\Shared\Application\TenantContextInterface;

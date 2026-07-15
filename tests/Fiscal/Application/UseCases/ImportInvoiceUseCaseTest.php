@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Fiscal\Application\UseCases;
 
 use App\Fiscal\Application\UseCases\ImportInvoiceUseCase;
+use App\Fiscal\Application\Data\InvoiceImportData;
 use App\Fiscal\Domain\Entities\Invoice;
 use App\Fiscal\Domain\Events\InvoiceImportedEvent;
 use App\Fiscal\Domain\Repositories\InvoiceRepositoryInterface;
@@ -12,8 +13,6 @@ use App\Fiscal\Domain\Services\TaxStrategies\TaxStrategyFactoryInterface;
 use App\Fiscal\Domain\Services\TaxStrategies\TaxStrategyInterface;
 use App\Fiscal\Domain\ValueObjects\Tax;
 use App\Fiscal\Domain\Enums\TaxCategory;
-use App\Ingestion\Application\DTOs\RawCfdiDto;
-use App\Ingestion\Application\DTOs\SatDocumentType;
 use App\Shared\Application\EventDispatcherInterface;
 use App\Shared\Application\TransactionManagerInterface;
 use App\Shared\Domain\ValueObjects\Money;
@@ -26,10 +25,9 @@ use RuntimeException;
  * Tests for ImportInvoiceUseCase after Phase 4 refactoring.
  *
  * Key change: the use case no longer depends on ProcessRawXmlUseCase.
- * It now receives a pre-built RawCfdiDto directly (provided by the listener
- * after hydrating from the staging repository).
+ * It receives a Fiscal-owned InvoiceImportData translated by the ACL.
  *
- * ProcessRawXmlUseCase mock has been removed from this test.
+ * Ingestion DTOs and ProcessRawXmlUseCase are intentionally absent here.
  */
 class ImportInvoiceUseCaseTest extends TestCase
 {
@@ -39,20 +37,17 @@ class ImportInvoiceUseCaseTest extends TestCase
     private EventDispatcherInterface    $eventDispatcher;
     private ImportInvoiceUseCase        $sut;
 
-    private RawCfdiDto $validDto;
+    private InvoiceImportData $validDto;
 
     protected function setUp(): void
     {
-        $this->validDto = new RawCfdiDto(
+        $this->validDto = new InvoiceImportData(
             uuid:               new Uuid('11111111-2222-3333-4444-555555555555'),
             emittedAt:          new DateTimeImmutable('2026-04-20 10:00:00'),
-            documentType:       SatDocumentType::INVOICE,
             tipoDeComprobante:  'I',
             metodoPago:         'PUE',
             subtotal:           new Money(100000),
             total:              new Money(116000),
-            emisorRfc:          'AAA010101AAA',
-            receptorRfc:        'XXX010101XXX',
         );
 
         $this->invoiceRepository = $this->createMock(InvoiceRepositoryInterface::class);

@@ -14,9 +14,17 @@ parameters:
       collectors:
         - type: className
           regex: ^App\\Shared\\.*
+    - name: Integration
+      collectors:
+        - type: className
+          regex: ^App\\Integration\\.*
   ruleset:
     Ingestion:
       - Shared
     Fiscal:
       - Shared
     Shared: ~
+    Integration:
+      - Ingestion
+      - Fiscal
+      - Shared

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Fiscal\Application\Listeners;
 
-use App\Fiscal\Application\Listeners\ProcessIncomeCfdiListener;
+use App\Fiscal\Application\Data\InvoiceImportData;
 use App\Fiscal\Application\UseCases\ImportInvoiceUseCase;
+use App\Integration\Application\Listeners\ProcessIncomeCfdiListener;
 use App\Ingestion\Application\DTOs\RawCfdiDto;
 use App\Ingestion\Application\DTOs\SatDocumentType;
 use App\Ingestion\Application\Enums\CfdiOwnershipCategory;
@@ -120,7 +121,7 @@ class ProcessIncomeCfdiListenerTest extends TestCase
             ->expects($this->once())
             ->method('execute')
             ->with(
-                $this->callback(fn(RawCfdiDto $dto) => $dto->emisorRfc === 'AAA010101AAA'),
+                $this->callback(fn(InvoiceImportData $dto) => $dto->uuid === $this->rawDto->uuid),
                 '625'
             );
 
@@ -133,7 +134,7 @@ class ProcessIncomeCfdiListenerTest extends TestCase
             ->expects($this->once())
             ->method('execute')
             ->with(
-                $this->callback(fn(RawCfdiDto $dto) => $dto->receptorRfc === 'BBB020202BBB'),
+                $this->callback(fn(InvoiceImportData $dto) => $dto->total === $this->rawDto->total),
                 '625'
             );
 

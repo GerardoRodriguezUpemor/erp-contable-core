@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Fiscal\Application\Listeners;
+namespace App\Integration\Application\Listeners;
 
+use App\Fiscal\Application\Data\InvoiceImportData;
 use App\Fiscal\Application\UseCases\ImportInvoiceUseCase;
+use App\Ingestion\Application\Contracts\RawCfdiStagingRepositoryInterface;
 use App\Ingestion\Application\Enums\CfdiOwnershipCategory;
 use App\Ingestion\Application\Events\ClassifiedCfdiIngestedIntegrationEvent;
-use App\Ingestion\Infrastructure\Persistence\RawCfdiStagingRepositoryInterface;
 use App\Shared\Application\TenantContextInterface;
 use RuntimeException;
 
@@ -74,6 +75,15 @@ class ProcessIncomeCfdiListener
 
         // Handoff — delegate entirely to the Fiscal use case.
         // The regime is resolved from the authenticated tenant context.
-        $this->importInvoiceUseCase->execute($dto, $this->tenantContext->getCurrentRegime());
+        $invoiceData = new InvoiceImportData(
+            uuid: $dto->uuid,
+            emittedAt: $dto->emittedAt,
+            tipoDeComprobante: $dto->tipoDeComprobante,
+            metodoPago: $dto->metodoPago,
+            subtotal: $dto->subtotal,
+            total: $dto->total,
+        );
+
+        $this->importInvoiceUseCase->execute($invoiceData, $this->tenantContext->getCurrentRegime());
     }
 }
